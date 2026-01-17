@@ -33,11 +33,11 @@ extern "C" {
 typedef struct OmniVehicleController {
     /* 依赖对象指针 */
     IMecanumKinematics_t* kinematics;       /**< 运动学对象指针 */
-    IOmniMotorDriver_t* motor_driver;         /**< 电机驱动对象指针 */
+    IOmniMotorDriver_t* motor_driver;       /**< 电机驱动对象指针 */
 
     /* 内部状态 */
-    VehicleVelocity_t current_velocity;         /**< 当前车体速度 */
-    WheelSpeeds_t current_wheel_speeds;       /**< 当前轮速 */
+    VehicleVelocity_t current_velocity;     /**< 当前车体速度 */
+    WheelSpeeds_t current_wheel_speeds;     /**< 当前轮速 */
     bool is_enabled;                        /**< 控制器使能状态 */
     
 

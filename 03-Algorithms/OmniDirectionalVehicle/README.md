@@ -253,17 +253,23 @@ controller->emergency_stop(controller);
 ```
 ω_FL = (Vx - Vy - ω*(Lx+Ly)) / R
 ω_FR = (Vx + Vy + ω*(Lx+Ly)) / R
-ω_RL = (Vx + Vy - ω*(Lx+Ly)) / R
-ω_RR = (Vx - Vy + ω*(Lx+Ly)) / R
+ω_RL = (Vx + Vy + ω*(Lx+Ly)) / R
+ω_RR = (Vx - Vy - ω*(Lx+Ly)) / R
 ```
 
 其中：
 - `Vx`: X方向线速度
 - `Vy`: Y方向线速度
 - `ω`: 角速度
-- `Lx`: 轮距的一半 (track_width/2)
-- `Ly`: 轴距的一半 (wheel_base/2)
+- `Lx`: 前后轴距的一半 (wheel_base/2)，前轮为正
+- `Ly`: 左右轮距的一半 (track_width/2)，右轮为正
 - `R`: 轮子半径 (wheel_radius)
+
+说明：
+- 前左轮(FL): 位置(Lx, -Ly)，对应公式中Lx+Ly项
+- 前右轮(FR): 位置(Lx, +Ly)，对应公式中Lx+Ly项
+- 后左轮(RL): 位置(-Lx, -Ly)，对应公式中-(Lx+Ly)项
+- 后右轮(RR): 位置(-Lx, +Ly)，对应公式中-(Lx+Ly)项
 
 ## 注意事项
 

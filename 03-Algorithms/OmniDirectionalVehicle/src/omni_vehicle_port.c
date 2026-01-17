@@ -37,17 +37,14 @@ int OmniVehiclePort_Init(OmniVehiclePort_t* port,
     /* 1. 初始化车辆几何参数 */
     if (geometry == NULL) {
         /* 使用默认值 */
-        VehicleGeometry_t default_geometry = {
-            .wheel_base = DEFAULT_WHEEL_BASE,
-            .track_width = DEFAULT_TRACK_WIDTH,
-            .wheel_radius = DEFAULT_WHEEL_RADIUS
-        };
-        port->geometry = default_geometry;
+        port->geometry.wheel_base = DEFAULT_WHEEL_BASE;
+        port->geometry.track_width = DEFAULT_TRACK_WIDTH;
+        port->geometry.wheel_radius = DEFAULT_WHEEL_RADIUS;
     } else {
         port->geometry = *geometry;
     }
     
-    /* 2. 创建运动学对象 */
+    /* 2. 创建运动学对象 - 传递geometry的地址 */
     if (MecanumKinematics_Init(&port->kinematics, &port->geometry) != 0) {
         return -1;
     }
@@ -161,8 +158,8 @@ int OmniVehiclePort_SetGeometry(OmniVehiclePort_t* port,
     /* 更新端口的几何参数 */
     port->geometry = *geometry;
     
-    /* 更新运动学对象的几何参数 */
-    MecanumKinematics_SetGeometry(&port->kinematics, geometry);
+    /* 更新运动学对象的几何参数 - 传递端口内部geometry的地址 */
+    MecanumKinematics_SetGeometry(&port->kinematics, &port->geometry);
     
     return 0;
 }

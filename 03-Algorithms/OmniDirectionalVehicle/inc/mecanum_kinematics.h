@@ -29,8 +29,8 @@ extern "C" {
  * @note 包含车辆几何参数和运动学计算函数
  */
 typedef struct IMecanumKinematics {
-    /* 车辆几何参数 */
-    VehicleGeometry_t geometry;     /**< 车辆几何参数 */
+    /* 车辆几何参数指针 */
+    const VehicleGeometry_t* p_geometry;     /**< 车辆几何参数指针 */
 
     /* 函数指针(虚函数表) */
     /**
@@ -61,6 +61,14 @@ typedef struct IMecanumKinematics {
 //---------------------------------------------------------------------------//
 //******************************** 函数声明 ***********************************//
 /**
+ * @brief 设置车辆几何参数
+ * @param self 运动学对象指针
+ * @param geometry 车辆几何参数指针
+ */
+void MecanumKinematics_SetGeometry(IMecanumKinematics_t* self,
+                                   const VehicleGeometry_t* geometry);
+
+/**
  * @brief 初始化麦轮运动学对象
  * @param kinematics 运动学对象指针
  * @param geometry 车辆几何参数指针
@@ -68,61 +76,6 @@ typedef struct IMecanumKinematics {
  */
 int MecanumKinematics_Init(IMecanumKinematics_t* kinematics,
                            const VehicleGeometry_t* geometry);
-
-/**
- * @brief      逆运动学计算：车体速度 -> 轮速
- * @param self 运动学对象指针
- * @param[in]  vehicle_vel 车体速度指针
- * @param[out] wheel_speeds 轮速数组指针
- * 
- * 麦轮运动学公式（基于标准四轮麦轮布局）：
- * ω_FL = (Vx - Vy - ω*(Lx+Ly)) / R
- * ω_FR = (Vx + Vy + ω*(Lx+Ly)) / R
- * ω_RL = (Vx + Vy + ω*(Lx+Ly)) / R
- * ω_RR = (Vx - Vy - ω*(Lx+Ly)) / R
- * 
- * 其中：
- * - Lx = wheel_base / 2 (前后轴距的一半，前轮为正)
- * - Ly = track_width / 2 (左右轮距的一半，右轮为正)
- * - R = wheel_radius (轮子半径)
- * 
- * 说明：
- * - 前左轮(FL): 位置(Lx, -Ly)，对应公式中Lx+Ly项
- * - 前右轮(FR): 位置(Lx, +Ly)，对应公式中Lx+Ly项
- * - 后左轮(RL): 位置(-Lx, -Ly)，对应公式中-(Lx+Ly)项
- * - 后右轮(RR): 位置(-Lx, +Ly)，对应公式中-(Lx+Ly)项
- */
-void MecanumKinematics_InverseKinematics(IMecanumKinematics_t* self,
-                                        const VehicleVelocity_t* vehicle_vel,
-                                        WheelSpeeds_t* wheel_speeds);
-
-/**
- * @brief 正运动学计算：轮速 -> 车体速度
- * @param self 运动学对象指针
- * @param[in]  wheel_speeds 轮速数组指针
- * @param[out] vehicle_vel 车体速度指针
- * 
- * 正运动学公式（逆运动学的逆运算）：
- * Vx = R/4 * (ω_FL + ω_FR + ω_RL + ω_RR)
- * Vy = R/4 * (-ω_FL + ω_FR + ω_RL - ω_RR)
- * ω  = R/(2*(Lx+Ly)) * (-ω_FL + ω_FR - ω_RL + ω_RR)
- * 
- * 其中：
- * - Lx = wheel_base / 2 (前后轴距的一半，前轮为正)
- * - Ly = track_width / 2 (左右轮距的一半，右轮为正)
- * - R = wheel_radius (轮子半径)
- */
-void MecanumKinematics_ForwardKinematics(IMecanumKinematics_t* self,
-                                      const WheelSpeeds_t* wheel_speeds,
-                                      VehicleVelocity_t* vehicle_vel);
-
-/**
- * @brief 设置车辆几何参数
- * @param self 运动学对象指针
- * @param geometry 车辆几何参数指针
- */
-void MecanumKinematics_SetGeometry(IMecanumKinematics_t* self,
-                                   const VehicleGeometry_t* geometry);
 //******************************** 函数声明 ***********************************//
 
 #ifdef __cplusplus

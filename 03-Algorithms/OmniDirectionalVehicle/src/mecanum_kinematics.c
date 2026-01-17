@@ -18,35 +18,6 @@
 //******************************** Functions ********************************//
 
 /**
- * @brief 初始化麦轮运动学对象
- */
-int MecanumKinematics_Init(IMecanumKinematics_t* kinematics,
-                           const VehicleGeometry_t* geometry)
-{
-    if (kinematics == NULL) {
-        return -1;
-    }
-    
-    /* 如果未提供几何参数，使用默认值 */
-    if (geometry == NULL) {
-        VehicleGeometry_t default_geometry = {
-            .wheel_base = DEFAULT_WHEEL_BASE,
-            .track_width = DEFAULT_TRACK_WIDTH,
-            .wheel_radius = DEFAULT_WHEEL_RADIUS
-        };
-        kinematics->geometry = default_geometry;
-    } else {
-        kinematics->geometry = *geometry;
-    }
-    
-    /* 绑定虚函数表 */
-    kinematics->calculate_inverse_kinematics = MecanumKinematics_InverseKinematics;
-    kinematics->calculate_forward_kinematics = MecanumKinematics_ForwardKinematics;
-    
-    return 0;
-}
-
-/**
  * @brief 逆运动学计算：车体速度 -> 轮速
  * 
  * 麦轮运动学公式（基于标准四轮麦轮布局）：
@@ -70,14 +41,15 @@ void MecanumKinematics_InverseKinematics(IMecanumKinematics_t* self,
                                         const VehicleVelocity_t* vehicle_vel,
                                         WheelSpeeds_t* wheel_speeds)
 {
-    if (self == NULL || vehicle_vel == NULL || wheel_speeds == NULL) {
+    if (self == NULL || vehicle_vel == NULL || wheel_speeds == NULL)
+    {
         return;
     }
     
     /* 计算几何参数 */
-    float Lx = self->geometry.wheel_base / 2.0f;   /* 前后轴距的一半（前轮为正） */
-    float Ly = self->geometry.track_width / 2.0f;     /* 左右轮距的一半（右轮为正） */
-    float R = self->geometry.wheel_radius;            /* 轮子半径 */
+    float Lx = self->p_geometry->wheel_base / 2.0f;   /* 前后轴距的一半（前轮为正） */
+    float Ly = self->p_geometry->track_width / 2.0f;  /* 左右轮距的一半（右轮为正） */
+    float R = self->p_geometry->wheel_radius;         /* 轮子半径 */
     
     /* 速度分量 */
     float Vx = vehicle_vel->vx;
@@ -93,6 +65,7 @@ void MecanumKinematics_InverseKinematics(IMecanumKinematics_t* self,
 
 /**
  * @brief 正运动学计算：轮速 -> 车体速度
+ * @note  这个轮速到车体速度没啥用，如果你想用它作为惯导的话，可以试试
  * 
  * 正运动学公式（逆运动学的逆运算）：
  * Vx = R/4 * (ω_FL + ω_FR + ω_RL + ω_RR)
@@ -108,14 +81,15 @@ void MecanumKinematics_ForwardKinematics(IMecanumKinematics_t* self,
                                       const WheelSpeeds_t* wheel_speeds,
                                       VehicleVelocity_t* vehicle_vel)
 {
-    if (self == NULL || wheel_speeds == NULL || vehicle_vel == NULL) {
+    if (self == NULL || wheel_speeds == NULL || vehicle_vel == NULL)
+    {
         return;
     }
     
     /* 计算几何参数 */
-    float Lx = self->geometry.wheel_base / 2.0f;   /* 前后轴距的一半（前轮为正） */
-    float Ly = self->geometry.track_width / 2.0f;     /* 左右轮距的一半（右轮为正） */
-    float R = self->geometry.wheel_radius;            /* 轮子半径 */
+    float Lx = self->p_geometry->wheel_base / 2.0f;   /* 前后轴距的一半（前轮为正） */
+    float Ly = self->p_geometry->track_width / 2.0f;     /* 左右轮距的一半（右轮为正） */
+    float R = self->p_geometry->wheel_radius;            /* 轮子半径 */
     
     /* 轮速分量 */
     float omega_FL = wheel_speeds->wheel_speeds[MOTOR_FRONT_LEFT];
@@ -135,8 +109,42 @@ void MecanumKinematics_ForwardKinematics(IMecanumKinematics_t* self,
 void MecanumKinematics_SetGeometry(IMecanumKinematics_t* self,
                                    const VehicleGeometry_t* geometry)
 {
-    if (self != NULL && geometry != NULL) {
-        self->geometry = *geometry;
+    if (self != NULL && geometry != NULL)
+    {
+        self->p_geometry = geometry;
     }
+}
+
+/**
+ * @brief 初始化麦轮运动学对象
+ */
+int MecanumKinematics_Init(IMecanumKinematics_t* kinematics,
+                           const VehicleGeometry_t* geometry)
+{
+    if (kinematics == NULL)
+    {
+        return -1;
+    }
+
+    /* 如果未提供几何参数，使用默认值 */
+    if (geometry == NULL)
+    {
+        static VehicleGeometry_t default_geometry = {
+            .wheel_base = DEFAULT_WHEEL_BASE,
+            .track_width = DEFAULT_TRACK_WIDTH,
+            .wheel_radius = DEFAULT_WHEEL_RADIUS
+        };
+        kinematics->p_geometry = &default_geometry;
+    }
+    else
+    {
+        kinematics->p_geometry = geometry;
+    }
+
+    /* 绑定虚函数表 */
+    kinematics->calculate_inverse_kinematics = MecanumKinematics_InverseKinematics;
+    kinematics->calculate_forward_kinematics = MecanumKinematics_ForwardKinematics;
+
+    return 0;
 }
 //******************************** Functions ********************************//

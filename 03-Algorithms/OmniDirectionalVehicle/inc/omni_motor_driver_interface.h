@@ -39,6 +39,7 @@ typedef void (*EnableMotor_fn)(MotorIndex_e motor_index, bool enable);
 
 /**
  * @brief 速度转PWM转换函数指针类型
+ * @note 这里注入你完成的PID算法接口，实现轮速到PWM的转换
  * @param speed_rad_s 轮速 (rad/s)
  * @return PWM占空比 (-100.0 ~ 100.0)
  */
@@ -54,7 +55,7 @@ typedef float (*SpeedToPWM_fn)(float speed_rad_s);
 typedef struct IOmniMotorDriver {
     /* 函数指针(虚函数表) */
     SetMotorPWM_fn set_motor_pwm;       /**< 设置电机PWM占空比 */
-    EnableMotor_fn enable_motor;         /**< 使能/失能电机 */
+    EnableMotor_fn enable_motor;        /**< 使能/失能电机 */
     SpeedToPWM_fn speed_to_pwm;         /**< 速度转PWM转换 */
 
     /* 私有数据指针 */
