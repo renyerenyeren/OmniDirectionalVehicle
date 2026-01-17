@@ -39,11 +39,16 @@ typedef void (*EnableMotor_fn)(MotorIndex_e motor_index, bool enable);
 
 /**
  * @brief 速度转PWM转换函数指针类型
- * @note 这里注入你完成的PID算法接口，实现轮速到PWM的转换
- * @param speed_rad_s 轮速 (rad/s)
- * @return PWM占空比 (-100.0 ~ 100.0)
+ * @note 用于实现轮速到PWM占空比的转换，通常使用PID算法实现
+ *
+ * @param handle 控制器句柄指针（通常为PID控制器实例）
+ * @param speed_rad_s 目标轮速 (rad/s)
+ * @return float PWM占空比 (-100.0 ~ 100.0)
+ *         - 正值表示正向旋转
+ *         - 负值表示反向旋转
+ *         - 0.0表示停止
  */
-typedef float (*SpeedToPWM_fn)(float speed_rad_s);
+typedef float (*SpeedToPWM_fn)(void* handle, float speed_rad_s);
 
 //******************************** Typedefs *********************************//
 //---------------------------------------------------------------------------//

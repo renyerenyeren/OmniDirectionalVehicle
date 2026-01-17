@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 # 引入 ODV 子模块
 add_subdirectory(OmniDirectionalVehicle)
+# 引入 PID 子模块
+add_subdirectory(PID)
 
 # ------------------------------
 # 定义 Algorithms 接口库（用于聚合所有 Algorithms 组件）
@@ -13,6 +15,7 @@ add_library(algorithms INTERFACE)
 # 任何链接了 "bsp" 的目标，都会自动链接
 target_link_libraries(algorithms INTERFACE
         odv_lib
+        pid_lib
 
 )
 
