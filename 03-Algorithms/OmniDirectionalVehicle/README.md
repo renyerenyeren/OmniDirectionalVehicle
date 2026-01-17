@@ -98,7 +98,11 @@ float rr_speed = wheel_speeds.wheel_speeds[MOTOR_REAR_RIGHT];
 
 ### 步骤4: （可选）使用电机驱动接口
 
-如果需要底层驱动注入，可以使用电机驱动接口：
+如果需要底层驱动注入，可以使用电机驱动接口。该接口提供三个函数指针：
+
+- **set_motor_pwm**：设置电机PWM占空比
+- **enable_motor**：使能/失能电机
+- **speed_to_pwm**：速度转PWM转换（可在此实现PID）
 
 ```c
 #include "omni_motor_driver_interface.h"
@@ -207,6 +211,21 @@ IOmniMotorDriver_t motor_driver;
 /* 底层驱动函数（需要在BSP层实现）*/
 void BSP_PWM_SetMotorPWM(MotorIndex_e motor_index, float duty_cycle) {
     // TODO: 根据motor_index设置对应电机PWM
+    // 示例：
+    switch (motor_index) {
+        case MOTOR_FRONT_LEFT:
+            TIM1->CCR1 = (uint32_t)(duty_cycle * TIMER_PERIOD / 100.0f);
+            break;
+        case MOTOR_FRONT_RIGHT:
+            TIM1->CCR2 = (uint32_t)(duty_cycle * TIMER_PERIOD / 100.0f);
+            break;
+        case MOTOR_REAR_LEFT:
+            TIM1->CCR3 = (uint32_t)(duty_cycle * TIMER_PERIOD / 100.0f);
+            break;
+        case MOTOR_REAR_RIGHT:
+            TIM1->CCR4 = (uint32_t)(duty_cycle * TIMER_PERIOD / 100.0f);
+            break;
+    }
 }
 
 void BSP_PWM_EnableMotor(MotorIndex_e motor_index, bool enable) {
@@ -325,7 +344,9 @@ Vy = R/4 * (-ω_FL + ω_FR + ω_RL - ω_RR)
 
 ## API参考
 
-### MecanumKinematics_Init
+### 运动学接口
+
+#### MecanumKinematics_Init
 
 ```c
 int MecanumKinematics_Init(IMecanumKinematics_t* kinematics,
@@ -340,7 +361,7 @@ int MecanumKinematics_Init(IMecanumKinematics_t* kinematics,
 - 0: 成功
 - -1: 失败
 
-### calculate_inverse_kinematics
+#### calculate_inverse_kinematics
 
 ```c
 void calculate_inverse_kinematics(IMecanumKinematics_t* self,
@@ -350,7 +371,7 @@ void calculate_inverse_kinematics(IMecanumKinematics_t* self,
 
 **功能：** 将车体速度转换为轮速
 
-### calculate_forward_kinematics
+#### calculate_forward_kinematics
 
 ```c
 void calculate_forward_kinematics(IMecanumKinematics_t* self,
@@ -360,7 +381,7 @@ void calculate_forward_kinematics(IMecanumKinematics_t* self,
 
 **功能：** 将轮速转换为车体速度
 
-### MecanumKinematics_SetGeometry
+#### MecanumKinematics_SetGeometry
 
 ```c
 void MecanumKinematics_SetGeometry(IMecanumKinematics_t* self,
@@ -368,6 +389,40 @@ void MecanumKinematics_SetGeometry(IMecanumKinematics_t* self,
 ```
 
 **功能：** 动态修改车辆几何参数
+
+### 电机驱动接口（可选）
+
+#### OmniMotorDriver_Init
+
+```c
+int OmniMotorDriver_Init(IOmniMotorDriver_t* driver,
+                      SetMotorPWM_fn set_pwm,
+                      EnableMotor_fn enable,
+                      SpeedToPWM_fn speed_convert);
+```
+
+**参数：**
+- `driver`: 电机驱动接口指针
+- `set_pwm`: PWM设置函数指针
+- `enable`: 电机使能函数指针
+- `speed_convert`: 速度转PWM转换函数指针
+
+**返回：**
+- 0: 成功
+- -1: 失败
+
+#### 函数指针类型
+
+```c
+typedef void (*SetMotorPWM_fn)(MotorIndex_e motor_index, float duty_cycle);
+typedef void (*EnableMotor_fn)(MotorIndex_e motor_index, bool enable);
+typedef float (*SpeedToPWM_fn)(float speed_rad_s);
+```
+
+**说明：**
+- `SetMotorPWM_fn`: 设置PWM占空比，范围-100.0~100.0，负值表示反转
+- `EnableMotor_fn`: 使能或失能电机
+- `SpeedToPWM_fn`: 将轮速(rad/s)转换为PWM占空比，可在此实现PID算法
 
 ## 注意事项
 
@@ -391,7 +446,13 @@ void MecanumKinematics_SetGeometry(IMecanumKinematics_t* self,
 5. **PID控制**：
    - 本库只提供运动学解算
    - 如需闭环控制，用户需自行实现PID
+   - 可以在`SpeedToPWM_fn`函数中实现PID算法
    - 可以根据编码器反馈实现速度闭环
+
+6. **电机驱动接口**：
+   - 电机驱动接口是可选的
+   - 如果不需要，可以完全绕过这个接口
+   - 直接调用运动学计算，然后用自己的方式输出到电机
 
 ## 默认参数
 
@@ -401,4 +462,32 @@ void MecanumKinematics_SetGeometry(IMecanumKinematics_t* self,
 #define DEFAULT_WHEEL_BASE 0.20f    // 200mm
 #define DEFAULT_TRACK_WIDTH 0.20f    // 200mm
 #define DEFAULT_WHEEL_RADIUS 0.05f   // 50mm
+```
+
+## 常见问题
+
+### Q: 是否必须使用电机驱动接口？
+
+A: 不是必须的。电机驱动接口只是一个便利的封装，你可以：
+- 使用该接口（推荐，代码更清晰）
+- 直接在BSP层实现PWM输出（更灵活，完全自定义）
+
+### Q: 如何实现PID控制？
+
+A: 在`SpeedToPWM_fn`函数中实现PID算法：
+
+```c
+float PID_Controller(float target_speed, float actual_speed) {
+    static float integral = 0.0f;
+    static float prev_error = 0.0f;
+    
+    float error = target_speed - actual_speed;
+    integral += error;
+    float derivative = error - prev_error;
+    
+    float output = Kp*error + Ki*integral + Kd*derivative;
+    prev_error = error;
+    
+    return output;  // 返回PWM占空比
+}
 ```
