@@ -45,6 +45,10 @@ add_subdirectory(01-BSP)
 # 新增：引入 LIBRARIES 模块
 # ------------------------------
 add_subdirectory(02-Libraries)
+# ------------------------------
+# 新增：引入 Algorithms 模块
+# ------------------------------
+add_subdirectory(03-Algorithms)
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -82,4 +86,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         # 新增：链接 LIBRARIES 库
         # ------------------------------
         libraries
+        # ------------------------------
+        # 新增：链接 Algorithms 库
+        # ------------------------------
+        algorithms
 )
