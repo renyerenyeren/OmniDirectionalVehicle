@@ -36,8 +36,8 @@ typedef struct IMecanumKinematics {
     /**
      * @brief 逆运动学计算：车体速度 -> 轮速
      * @param self 运动学对象指针
-     * @param vehicle_vel 车体速度指针 (输入)
-     * @param wheel_speeds 轮速数组指针 (输出)
+     * @param[in]  vehicle_vel 车体速度指针
+     * @param[out] wheel_speeds 轮速数组指针
      */
     void (*calculate_inverse_kinematics)(
         struct IMecanumKinematics* self,
@@ -47,8 +47,9 @@ typedef struct IMecanumKinematics {
     /**
      * @brief 正运动学计算：轮速 -> 车体速度
      * @param self 运动学对象指针
-     * @param wheel_speeds 轮速数组指针 (输入)
-     * @param vehicle_vel 车体速度指针 (输出)
+     * @param[in]  wheel_speeds 轮速数组指针
+     * @param[out] vehicle_vel 车体速度指针
+     * @note  这个轮速到车体速度没啥用，如果你想用它作为惯导的话，可以试试
      */
     void (*calculate_forward_kinematics)(
         struct IMecanumKinematics* self,
@@ -69,21 +70,27 @@ int MecanumKinematics_Init(IMecanumKinematics_t* kinematics,
                            const VehicleGeometry_t* geometry);
 
 /**
- * @brief 逆运动学计算：车体速度 -> 轮速
+ * @brief      逆运动学计算：车体速度 -> 轮速
  * @param self 运动学对象指针
- * @param vehicle_vel 车体速度指针
- * @param wheel_speeds 轮速数组指针
+ * @param[in]  vehicle_vel 车体速度指针
+ * @param[out] wheel_speeds 轮速数组指针
  * 
- * 运动学公式：
+ * 麦轮运动学公式（基于标准四轮麦轮布局）：
  * ω_FL = (Vx - Vy - ω*(Lx+Ly)) / R
  * ω_FR = (Vx + Vy + ω*(Lx+Ly)) / R
- * ω_RL = (Vx + Vy - ω*(Lx+Ly)) / R
- * ω_RR = (Vx - Vy + ω*(Lx+Ly)) / R
+ * ω_RL = (Vx + Vy + ω*(Lx+Ly)) / R
+ * ω_RR = (Vx - Vy - ω*(Lx+Ly)) / R
  * 
  * 其中：
- * - Lx = track_width / 2 (左右轮距的一半)
- * - Ly = wheel_base / 2 (前后轴距的一半)
+ * - Lx = wheel_base / 2 (前后轴距的一半，前轮为正)
+ * - Ly = track_width / 2 (左右轮距的一半，右轮为正)
  * - R = wheel_radius (轮子半径)
+ * 
+ * 说明：
+ * - 前左轮(FL): 位置(Lx, -Ly)，对应公式中Lx+Ly项
+ * - 前右轮(FR): 位置(Lx, +Ly)，对应公式中Lx+Ly项
+ * - 后左轮(RL): 位置(-Lx, -Ly)，对应公式中-(Lx+Ly)项
+ * - 后右轮(RR): 位置(-Lx, +Ly)，对应公式中-(Lx+Ly)项
  */
 void MecanumKinematics_InverseKinematics(IMecanumKinematics_t* self,
                                         const VehicleVelocity_t* vehicle_vel,
@@ -92,13 +99,18 @@ void MecanumKinematics_InverseKinematics(IMecanumKinematics_t* self,
 /**
  * @brief 正运动学计算：轮速 -> 车体速度
  * @param self 运动学对象指针
- * @param wheel_speeds 轮速数组指针
- * @param vehicle_vel 车体速度指针
+ * @param[in]  wheel_speeds 轮速数组指针
+ * @param[out] vehicle_vel 车体速度指针
  * 
- * 运动学公式（逆运动学的逆运算）：
+ * 正运动学公式（逆运动学的逆运算）：
  * Vx = R/4 * (ω_FL + ω_FR + ω_RL + ω_RR)
  * Vy = R/4 * (-ω_FL + ω_FR + ω_RL - ω_RR)
  * ω  = R/(2*(Lx+Ly)) * (-ω_FL + ω_FR - ω_RL + ω_RR)
+ * 
+ * 其中：
+ * - Lx = wheel_base / 2 (前后轴距的一半，前轮为正)
+ * - Ly = track_width / 2 (左右轮距的一半，右轮为正)
+ * - R = wheel_radius (轮子半径)
  */
 void MecanumKinematics_ForwardKinematics(IMecanumKinematics_t* self,
                                       const WheelSpeeds_t* wheel_speeds,

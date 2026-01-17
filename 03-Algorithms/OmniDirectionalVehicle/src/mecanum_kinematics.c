@@ -49,16 +49,22 @@ int MecanumKinematics_Init(IMecanumKinematics_t* kinematics,
 /**
  * @brief 逆运动学计算：车体速度 -> 轮速
  * 
- * 麦轮运动学公式：
+ * 麦轮运动学公式（基于标准四轮麦轮布局）：
  * ω_FL = (Vx - Vy - ω*(Lx+Ly)) / R
  * ω_FR = (Vx + Vy + ω*(Lx+Ly)) / R
- * ω_RL = (Vx + Vy - ω*(Lx+Ly)) / R
- * ω_RR = (Vx - Vy + ω*(Lx+Ly)) / R
+ * ω_RL = (Vx + Vy + ω*(Lx+Ly)) / R
+ * ω_RR = (Vx - Vy - ω*(Lx+Ly)) / R
  * 
  * 其中：
- * - Lx = track_width / 2 (左右轮距的一半)
- * - Ly = wheel_base / 2 (前后轴距的一半)
+ * - Lx = wheel_base / 2 (前后轴距的一半，前轮为正)
+ * - Ly = track_width / 2 (左右轮距的一半，右轮为正)
  * - R = wheel_radius (轮子半径)
+ * 
+ * 说明：
+ * - 前左轮(FL): 位置(Lx, -Ly)，对应公式中Lx+Ly项
+ * - 前右轮(FR): 位置(Lx, +Ly)，对应公式中Lx+Ly项
+ * - 后左轮(RL): 位置(-Lx, -Ly)，对应公式中-(Lx+Ly)项
+ * - 后右轮(RR): 位置(-Lx, +Ly)，对应公式中-(Lx+Ly)项
  */
 void MecanumKinematics_InverseKinematics(IMecanumKinematics_t* self,
                                         const VehicleVelocity_t* vehicle_vel,
@@ -69,9 +75,9 @@ void MecanumKinematics_InverseKinematics(IMecanumKinematics_t* self,
     }
     
     /* 计算几何参数 */
-    float Lx = self->geometry.track_width / 2.0f;  /* 左右轮距的一半 */
-    float Ly = self->geometry.wheel_base / 2.0f;   /* 前后轴距的一半 */
-    float R = self->geometry.wheel_radius;          /* 轮子半径 */
+    float Lx = self->geometry.wheel_base / 2.0f;   /* 前后轴距的一半（前轮为正） */
+    float Ly = self->geometry.track_width / 2.0f;     /* 左右轮距的一半（右轮为正） */
+    float R = self->geometry.wheel_radius;            /* 轮子半径 */
     
     /* 速度分量 */
     float Vx = vehicle_vel->vx;
@@ -81,12 +87,22 @@ void MecanumKinematics_InverseKinematics(IMecanumKinematics_t* self,
     /* 麦轮逆运动学公式 */
     wheel_speeds->wheel_speeds[MOTOR_FRONT_LEFT]  = (Vx - Vy - omega * (Lx + Ly)) / R;
     wheel_speeds->wheel_speeds[MOTOR_FRONT_RIGHT] = (Vx + Vy + omega * (Lx + Ly)) / R;
-    wheel_speeds->wheel_speeds[MOTOR_REAR_LEFT]   = (Vx + Vy - omega * (Lx + Ly)) / R;
-    wheel_speeds->wheel_speeds[MOTOR_REAR_RIGHT]  = (Vx - Vy + omega * (Lx + Ly)) / R;
+    wheel_speeds->wheel_speeds[MOTOR_REAR_LEFT]   = (Vx + Vy + omega * (Lx + Ly)) / R;
+    wheel_speeds->wheel_speeds[MOTOR_REAR_RIGHT]  = (Vx - Vy - omega * (Lx + Ly)) / R;
 }
 
 /**
  * @brief 正运动学计算：轮速 -> 车体速度
+ * 
+ * 正运动学公式（逆运动学的逆运算）：
+ * Vx = R/4 * (ω_FL + ω_FR + ω_RL + ω_RR)
+ * Vy = R/4 * (-ω_FL + ω_FR + ω_RL - ω_RR)
+ * ω  = R/(2*(Lx+Ly)) * (-ω_FL + ω_FR - ω_RL + ω_RR)
+ * 
+ * 其中：
+ * - Lx = wheel_base / 2 (前后轴距的一半，前轮为正)
+ * - Ly = track_width / 2 (左右轮距的一半，右轮为正)
+ * - R = wheel_radius (轮子半径)
  */
 void MecanumKinematics_ForwardKinematics(IMecanumKinematics_t* self,
                                       const WheelSpeeds_t* wheel_speeds,
@@ -97,9 +113,9 @@ void MecanumKinematics_ForwardKinematics(IMecanumKinematics_t* self,
     }
     
     /* 计算几何参数 */
-    float Lx = self->geometry.track_width / 2.0f;  /* 左右轮距的一半 */
-    float Ly = self->geometry.wheel_base / 2.0f;   /* 前后轴距的一半 */
-    float R = self->geometry.wheel_radius;          /* 轮子半径 */
+    float Lx = self->geometry.wheel_base / 2.0f;   /* 前后轴距的一半（前轮为正） */
+    float Ly = self->geometry.track_width / 2.0f;     /* 左右轮距的一半（右轮为正） */
+    float R = self->geometry.wheel_radius;            /* 轮子半径 */
     
     /* 轮速分量 */
     float omega_FL = wheel_speeds->wheel_speeds[MOTOR_FRONT_LEFT];
