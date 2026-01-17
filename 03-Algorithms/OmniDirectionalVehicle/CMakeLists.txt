@@ -6,9 +6,7 @@ add_library(odv_lib STATIC)
 # 添加 ODV 模块的源文件
 target_sources(odv_lib PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/mecanum_kinematics.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/omni_vehicle_controller.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/omni_motor_driver_interface.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/omni_vehicle_port.c
 )
 
 # 暴露 ODV 模块的头文件路径

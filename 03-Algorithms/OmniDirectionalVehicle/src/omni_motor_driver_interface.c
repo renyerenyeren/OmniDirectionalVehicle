@@ -26,7 +26,8 @@ int OmniMotorDriver_Init(IOmniMotorDriver_t* driver,
                       EnableMotor_fn enable,
                       SpeedToPWM_fn speed_convert)
 {
-    if (driver == NULL) {
+    if (driver == NULL)
+    {
         return -1;
     }
     
@@ -39,71 +40,5 @@ int OmniMotorDriver_Init(IOmniMotorDriver_t* driver,
     driver->private_data = NULL;
     
     return 0;
-}
-
-/**
- * @brief 设置电机PWM占空比
- */
-void OmniMotorDriver_SetPWM(IOmniMotorDriver_t* driver, 
-                          MotorIndex_e motor_index, 
-                          float duty_cycle)
-{
-    if (driver == NULL) {
-        return;
-    }
-    
-    /* 检查函数指针是否有效 */
-    if (driver->set_motor_pwm != NULL) {
-        driver->set_motor_pwm(motor_index, duty_cycle);
-    }
-}
-
-/**
- * @brief 使能/失能电机
- */
-void OmniMotorDriver_Enable(IOmniMotorDriver_t* driver,
-                         MotorIndex_e motor_index,
-                         bool enable)
-{
-    if (driver == NULL) {
-        return;
-    }
-    
-    /* 检查函数指针是否有效 */
-    if (driver->enable_motor != NULL) {
-        driver->enable_motor(motor_index, enable);
-    }
-}
-
-/**
- * @brief 使能所有电机
- */
-void OmniMotorDriver_EnableAll(IOmniMotorDriver_t* driver, bool enable)
-{
-    if (driver == NULL) {
-        return;
-    }
-    
-    /* 使能所有4个电机 */
-    for (MotorIndex_e i = MOTOR_FRONT_LEFT; i < MOTOR_COUNT; i++) {
-        OmniMotorDriver_Enable(driver, i, enable);
-    }
-}
-
-/**
- * @brief 将轮速转换为PWM占空比
- */
-float OmniMotorDriver_SpeedToPWM(IOmniMotorDriver_t* driver, float speed_rad_s)
-{
-    if (driver == NULL) {
-        return 0.0f;
-    }
-    
-    /* 检查函数指针是否有效 */
-    if (driver->speed_to_pwm != NULL) {
-        return driver->speed_to_pwm(speed_rad_s);
-    }
-    
-    return 0.0f;
 }
 //******************************** Functions ********************************//

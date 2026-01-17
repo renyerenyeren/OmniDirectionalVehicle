@@ -1,252 +1,294 @@
-# 麦轮全向车控制系统使用指南
+# 麦轮运动学算法库使用指南
 
 ## 概述
 
-本系统实现了一个基于STM32的4轮麦轮全向车控制系统，采用C语言面向对象设计模式，通过依赖注入实现底层解耦。
+本库实现了麦轮全向车的运动学算法，提供正逆运动学计算功能。采用极简设计，只专注于数学计算，不包含控制逻辑（如PID、限幅等），给用户最大的灵活性。
 
 ## 架构设计
 
-### 分层架构
+### 模块组成
 
 ```
 ┌────────────────────────────────────┐
-│   OmniVehiclePort (依赖注入端口)     │
-│   - 管理对象生命周期                  │
-│   - 统一初始化接口                    │
-└─────────────┬──────────────────────┘
+│   MecanumKinematics            │
+│   运动学算法（核心模块）        │
+│   - 正运动学                    │
+│   - 逆运动学                    │
+└────────────────────────────────────┘
+              ↑
+              │ 依赖
               │
-    ┌─────────┴──────────┐
-    │                    │
-┌───▼────┐        ┌────▼──────────┐
-│Controller│        │  Kinematics │
-│  控制器  │        │   运动学      │
-└───┬────┘        └─────────────┘
-    │
-┌───▼────────────┐
-│ MotorDriver   │
-│  电机驱动接口  │
-└───────────────┘
-       │
-       ▼
-┌──────────────┐
-│  BSP层PWM    │
-│  (用户实现)  │
-└──────────────┘
+┌─────────────┴──────────────┐
+│   omni_types.h              │
+│   基础数据类型定义           │
+└───────────────────────────────┘
+
+┌────────────────────────────────────┐
+│   OmniMotorDriverInterface      │
+│   电机驱动接口（可选）          │
+│   - 用于底层驱动注入            │
+└────────────────────────────────────┘
 ```
 
-### 设计模式
+### 设计理念
 
-- **依赖注入**: 通过函数指针注入底层驱动，解耦算法层和硬件层
-- **工厂模式**: Port负责创建和管理所有对象
-- **门面模式**: Port对外提供统一接口
-- **单一职责原则**: 每个模块专注于特定功能
+- **职责单一**：运动学模块只做数学计算
+- **极简设计**：不包含控制逻辑（PID、限幅、状态管理等）
+- **高度灵活**：用户可以根据需要组织自己的控制流程
 
 ## 文件结构
 
 ### 头文件 (inc/)
 
 - `omni_types.h` - 基础数据类型定义
-- `omni_motor_driver_interface.h` - 电机驱动接口
 - `mecanum_kinematics.h` - 麦轮运动学接口
-- `omni_vehicle_controller.h` - 车辆控制器接口
-- `omni_vehicle_port.h` - 依赖注入端口
+- `omni_motor_driver_interface.h` - 电机驱动接口（可选）
 
 ### 源文件 (src/)
 
 - `mecanum_kinematics.c` - 运动学算法实现
-- `omni_vehicle_controller.c` - 控制器逻辑实现
-- `omni_motor_driver_interface.c` - 电机驱动接口封装
-- `omni_vehicle_port.c` - 依赖注入端口实现
+- `omni_motor_driver_interface.c` - 电机驱动接口封装（可选）
 
 ## 使用步骤
 
-### 步骤1: 实现BSP层PWM驱动
-
-在 `01-BSP/PWM/` 目录下实现以下函数：
+### 步骤1: 定义车辆几何参数
 
 ```c
-// 01-BSP/PWM/inc/bsp_pwm.h
-#ifndef BSP_PWM_H
-#define BSP_PWM_H
-
 #include "omni_types.h"
+#include "mecanum_kinematics.h"
 
-void BSP_PWM_Init(void);
-void BSP_PWM_SetDutyCycle(MotorIndex_e motor, float duty);
-void BSP_PWM_EnableMotor(MotorIndex_e motor, bool enable);
-float BSP_PWM_SpeedToPWM(float speed_rad_s);
-
-#endif /* BSP_PWM_H */
+/* 车辆几何参数 */
+VehicleGeometry_t geometry = {
+    .wheel_base = 0.20f,    // 200mm前后轴距
+    .track_width = 0.20f,    // 200mm左右轮距
+    .wheel_radius = 0.05f     // 50mm轮径
+};
 ```
 
+### 步骤2: 初始化运动学对象
+
 ```c
-// 01-BSP/PWM/src/bsp_pwm.c
-#include "bsp_pwm.h"
+/* 创建运动学对象 */
+IMecanumKinematics_t kinematics;
 
-void BSP_PWM_Init(void)
-{
-    // TODO: 根据CubeMX配置初始化PWM
-}
+/* 初始化（可传入NULL使用默认几何参数） */
+MecanumKinematics_Init(&kinematics, &geometry);
+```
 
-void BSP_PWM_SetDutyCycle(MotorIndex_e motor, float duty)
-{
-    // TODO: 设置指定电机的PWM占空比
-    switch (motor) {
-        case MOTOR_FRONT_LEFT:
-            // TIM1->CCR1 = (uint32_t)(duty * TIMER_PERIOD / 100.0f);
-            break;
-        case MOTOR_FRONT_RIGHT:
-            // TIM1->CCR2 = (uint32_t)(duty * TIMER_PERIOD / 100.0f);
-            break;
-        case MOTOR_REAR_LEFT:
-            // TIM1->CCR3 = (uint32_t)(duty * TIMER_PERIOD / 100.0f);
-            break;
-        case MOTOR_REAR_RIGHT:
-            // TIM1->CCR4 = (uint32_t)(duty * TIMER_PERIOD / 100.0f);
-            break;
-    }
-}
+### 步骤3: 逆运动学计算（车体速度 -> 轮速）
 
-void BSP_PWM_EnableMotor(MotorIndex_e motor, bool enable)
-{
-    // TODO: 使能或失能指定电机
-}
+```c
+/* 设置目标车体速度 */
+VehicleVelocity_t target_vel = {
+    .vx = 0.5f,      // 前进 0.5 m/s
+    .vy = 0.0f,      // 不横向移动
+    .omega = 0.0f     // 不旋转
+};
 
-float BSP_PWM_SpeedToPWM(float speed_rad_s)
-{
-    // TODO: 实现速度到PWM的转换
-    float pwm = speed_rad_s / MAX_WHEEL_SPEED * 100.0f;
-    return pwm;
+/* 计算目标轮速 */
+WheelSpeeds_t wheel_speeds;
+kinematics.calculate_inverse_kinematics(&kinematics, &target_vel, &wheel_speeds);
+
+/* 获取各轮速度（rad/s） */
+float fl_speed = wheel_speeds.wheel_speeds[MOTOR_FRONT_LEFT];
+float fr_speed = wheel_speeds.wheel_speeds[MOTOR_FRONT_RIGHT];
+float rl_speed = wheel_speeds.wheel_speeds[MOTOR_REAR_LEFT];
+float rr_speed = wheel_speeds.wheel_speeds[MOTOR_REAR_RIGHT];
+```
+
+### 步骤4: （可选）使用电机驱动接口
+
+如果需要底层驱动注入，可以使用电机驱动接口：
+
+```c
+#include "omni_motor_driver_interface.h"
+
+/* 定义底层驱动函数 */
+void BSP_PWM_SetMotorPWM(MotorIndex_e motor_index, float duty_cycle);
+void BSP_PWM_EnableMotor(MotorIndex_e motor_index, bool enable);
+float BSP_PWM_ConvertSpeed(float speed_rad_s);
+
+/* 初始化电机驱动接口 */
+IOmniMotorDriver_t motor_driver;
+OmniMotorDriver_Init(&motor_driver, 
+                    BSP_PWM_SetMotorPWM, 
+                    BSP_PWM_EnableMotor, 
+                    BSP_PWM_ConvertSpeed);
+
+/* 输出到电机 */
+for (MotorIndex_e i = MOTOR_FRONT_LEFT; i < MOTOR_COUNT; i++) {
+    float pwm_duty = motor_driver.speed_to_pwm(wheel_speeds.wheel_speeds[i]);
+    motor_driver.set_motor_pwm(i, pwm_duty);
 }
 ```
 
-### 步骤2: 在main.c中使用
+### 步骤5: （可选）正运动学计算（轮速 -> 车体速度）
 
 ```c
-/* Includes ------------------------------------------------------------------*/
-#include "omni_vehicle_port.h"
-#include "bsp_pwm.h"
+/* 根据实际轮速推算车体速度 */
+WheelSpeeds_t actual_wheel_speeds = {
+    .wheel_speeds[MOTOR_FRONT_LEFT] = 10.0f,
+    .wheel_speeds[MOTOR_FRONT_RIGHT] = 10.0f,
+    .wheel_speeds[MOTOR_REAR_LEFT] = 10.0f,
+    .wheel_speeds[MOTOR_REAR_RIGHT] = 10.0f
+};
 
-/* Private variables ---------------------------------------------------------*/
-OmniVehiclePort_t omni_port;
+VehicleVelocity_t actual_vel;
+kinematics.calculate_forward_kinematics(&kinematics, &actual_wheel_speeds, &actual_vel);
 
-/* Private function prototypes -----------------------------------------------*/
-static void BSP_PWM_SetMotorPWM(MotorIndex_e motor_index, float duty_cycle);
-static void BSP_PWM_EnableMotor(MotorIndex_e motor_index, bool enable);
-static float BSP_PWM_ConvertSpeed(float speed_rad_s);
-
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
-    /* MCU Configuration */
-    HAL_Init();
-    SystemClock_Config();
-    MX_GPIO_Init();
-    
-    /* 初始化BSP层PWM */
-    BSP_PWM_Init();
-    
-    /* 步骤1: 初始化Port */
-    VehicleGeometry_t geometry = {
-        .wheel_base = 0.20f,    // 200mm轴距
-        .track_width = 0.20f,    // 200mm轮距
-        .wheel_radius = 0.05f     // 50mm轮径
-    };
-    OmniVehiclePort_Init(&omni_port, &geometry);
-    
-    /* 步骤2: 注入BSP层PWM驱动函数 */
-    OmniVehiclePort_InjectPWMDriver(&omni_port,
-                                   BSP_PWM_SetMotorPWM,
-                                   BSP_PWM_EnableMotor,
-                                   BSP_PWM_ConvertSpeed);
-    
-    /* 步骤3: 获取控制器对象 */
-    OmniVehicleController_t* controller = OmniVehiclePort_GetController(&omni_port);
-    
-    /* 步骤4: 使能控制器 */
-    controller->enable(controller, true);
-    
-    /* 步骤5: 设置目标速度 */
-    VehicleVelocity_t target_vel = {
-        .vx = 0.5f,      // 前进 0.5 m/s
-        .vy = 0.0f,      // 不横向移动
-        .omega = 0.0f    // 不旋转
-    };
-    controller->set_velocity(controller, &target_vel);
-    
-    /* 主循环 */
-    while (1)
-    {
-        /* 周期调用控制器更新 */
-        controller->update(controller);
-        
-        HAL_Delay(10);  // 10ms控制周期
-    }
-}
-
-/* BSP层PWM驱动函数实现 */
-static void BSP_PWM_SetMotorPWM(MotorIndex_e motor_index, float duty_cycle)
-{
-    BSP_PWM_SetDutyCycle(motor_index, duty_cycle);
-}
-
-static void BSP_PWM_EnableMotor(MotorIndex_e motor_index, bool enable)
-{
-    BSP_PWM_EnableMotor(motor_index, enable);
-}
-
-static float BSP_PWM_ConvertSpeed(float speed_rad_s)
-{
-    return BSP_PWM_SpeedToPWM(speed_rad_s);
-}
+/* 获取实际车体速度 */
+printf("Vx: %.3f m/s, Vy: %.3f m/s, Omega: %.3f rad/s\n", 
+       actual_vel.vx, actual_vel.vy, actual_vel.omega);
 ```
 
 ## 使用示例
 
 ### 示例1: 前进
+
 ```c
 VehicleVelocity_t vel = { .vx = 0.5f, .vy = 0.0f, .omega = 0.0f };
-controller->set_velocity(controller, &vel);
-controller->update(controller);
+WheelSpeeds_t speeds;
+kinematics.calculate_inverse_kinematics(&kinematics, &vel, &speeds);
+
+// 结果：四个轮子同向同速
 ```
 
 ### 示例2: 后退
+
 ```c
 VehicleVelocity_t vel = { .vx = -0.5f, .vy = 0.0f, .omega = 0.0f };
-controller->set_velocity(controller, &vel);
-controller->update(controller);
+WheelSpeeds_t speeds;
+kinematics.calculate_inverse_kinematics(&kinematics, &vel, &speeds);
+
+// 结果：四个轮子反向同速
 ```
 
 ### 示例3: 左移
+
 ```c
 VehicleVelocity_t vel = { .vx = 0.0f, .vy = 0.5f, .omega = 0.0f };
-controller->set_velocity(controller, &vel);
-controller->update(controller);
+WheelSpeeds_t speeds;
+kinematics.calculate_inverse_kinematics(&kinematics, &vel, &speeds);
+
+// 结果：左侧轮子向前，右侧轮子向后
 ```
 
 ### 示例4: 原地旋转
+
 ```c
 VehicleVelocity_t vel = { .vx = 0.0f, .vy = 0.0f, .omega = 1.57f };
-controller->set_velocity(controller, &vel);
-controller->update(controller);
+WheelSpeeds_t speeds;
+kinematics.calculate_inverse_kinematics(&kinematics, &vel, &speeds);
+
+// 结果：左侧轮子反向，右侧轮子同向
 ```
 
 ### 示例5: 斜向移动
+
 ```c
 VehicleVelocity_t vel = { .vx = 0.5f, .vy = 0.5f, .omega = 0.0f };
-controller->set_velocity(controller, &vel);
-controller->update(controller);
+WheelSpeeds_t speeds;
+kinematics.calculate_inverse_kinematics(&kinematics, &vel, &speeds);
+
+// 结果：对角轮子同向，另外对角轮子反向
 ```
 
-### 示例6: 紧急停止
+## 完整示例
+
 ```c
-controller->emergency_stop(controller);
+#include "omni_types.h"
+#include "mecanum_kinematics.h"
+#include "omni_motor_driver_interface.h"
+
+/* 全局变量 */
+IMecanumKinematics_t kinematics;
+IOmniMotorDriver_t motor_driver;
+
+/* 底层驱动函数（需要在BSP层实现）*/
+void BSP_PWM_SetMotorPWM(MotorIndex_e motor_index, float duty_cycle) {
+    // TODO: 根据motor_index设置对应电机PWM
+}
+
+void BSP_PWM_EnableMotor(MotorIndex_e motor_index, bool enable) {
+    // TODO: 使能或失能对应电机
+}
+
+float BSP_PWM_ConvertSpeed(float speed_rad_s) {
+    // TODO: 将角速度转换为PWM占空比
+    // 示例：假设最大轮速20rad/s对应100% PWM
+    return speed_rad_s / 20.0f * 100.0f;
+}
+
+int main(void) {
+    /* 1. 初始化系统 */
+    HAL_Init();
+    SystemClock_Config();
+    
+    /* 2. 定义几何参数 */
+    VehicleGeometry_t geometry = {
+        .wheel_base = 0.20f,
+        .track_width = 0.20f,
+        .wheel_radius = 0.05f
+    };
+    
+    /* 3. 初始化运动学对象 */
+    MecanumKinematics_Init(&kinematics, &geometry);
+    
+    /* 4. 初始化电机驱动接口 */
+    OmniMotorDriver_Init(&motor_driver, 
+                        BSP_PWM_SetMotorPWM, 
+                        BSP_PWM_EnableMotor, 
+                        BSP_PWM_ConvertSpeed);
+    
+    /* 5. 主循环 */
+    while (1) {
+        /* 5.1 设置目标速度（这里可以替换为从遥控或上位机接收）*/
+        VehicleVelocity_t target_vel = {
+            .vx = 0.3f,
+            .vy = 0.2f,
+            .omega = 0.5f
+        };
+        
+        /* 5.2 运动学逆解算 */
+        WheelSpeeds_t wheel_speeds;
+        kinematics.calculate_inverse_kinematics(&kinematics, &target_vel, &wheel_speeds);
+        
+        /* 5.3 速度限幅（用户自行实现）*/
+        for (int i = 0; i < MOTOR_COUNT; i++) {
+            wheel_speeds.wheel_speeds[i] = CLAMP(wheel_speeds.wheel_speeds[i], 
+                                                -20.0f, 
+                                                20.0f);
+        }
+        
+        /* 5.4 输出到电机 */
+        for (MotorIndex_e i = MOTOR_FRONT_LEFT; i < MOTOR_COUNT; i++) {
+            float pwm_duty = motor_driver.speed_to_pwm(wheel_speeds.wheel_speeds[i]);
+            pwm_duty = CLAMP(pwm_duty, -100.0f, 100.0f);
+            motor_driver.set_motor_pwm(i, pwm_duty);
+        }
+        
+        HAL_Delay(10);  // 10ms控制周期
+    }
+}
 ```
 
 ## 运动学原理
+
+### 坐标系定义
+
+```
+     Y
+     ↑
+     |
+     |
+     +------→ X
+    (前进方向)
+```
+
+- **X轴**：车体前进方向
+- **Y轴**：车体左侧方向
+- **Z轴**：向上（右手坐标系）
+- **角速度ω**：逆时针为正
 
 ### 逆运动学公式
 
@@ -258,35 +300,105 @@ controller->emergency_stop(controller);
 ```
 
 其中：
-- `Vx`: X方向线速度
-- `Vy`: Y方向线速度
-- `ω`: 角速度
+- `Vx`: X方向线速度 (m/s)
+- `Vy`: Y方向线速度 (m/s)
+- `ω`: 角速度 (rad/s)
 - `Lx`: 前后轴距的一半 (wheel_base/2)，前轮为正
 - `Ly`: 左右轮距的一半 (track_width/2)，右轮为正
-- `R`: 轮子半径 (wheel_radius)
+- `R`: 轮子半径 (wheel_radius) (m)
+- `ω_FL/FR/RL/RR`: 四个轮子的角速度 (rad/s)
 
-说明：
-- 前左轮(FL): 位置(Lx, -Ly)，对应公式中Lx+Ly项
-- 前右轮(FR): 位置(Lx, +Ly)，对应公式中Lx+Ly项
-- 后左轮(RL): 位置(-Lx, -Ly)，对应公式中-(Lx+Ly)项
-- 后右轮(RR): 位置(-Lx, +Ly)，对应公式中-(Lx+Ly)项
+### 轮子位置说明
+
+- **前左轮(FL)**: 位置(Lx, -Ly)，对应公式中Lx+Ly项
+- **前右轮(FR)**: 位置(Lx, +Ly)，对应公式中Lx+Ly项
+- **后左轮(RL)**: 位置(-Lx, -Ly)，对应公式中-(Lx+Ly)项
+- **后右轮(RR)**: 位置(-Lx, +Ly)，对应公式中-(Lx+Ly)项
+
+### 正运动学公式
+
+```
+Vx = R/4 * (ω_FL + ω_FR + ω_RL + ω_RR)
+Vy = R/4 * (-ω_FL + ω_FR + ω_RL - ω_RR)
+ω  = R/(2*(Lx+Ly)) * (-ω_FL + ω_FR - ω_RL + ω_RR)
+```
+
+## API参考
+
+### MecanumKinematics_Init
+
+```c
+int MecanumKinematics_Init(IMecanumKinematics_t* kinematics,
+                       const VehicleGeometry_t* geometry);
+```
+
+**参数：**
+- `kinematics`: 运动学对象指针
+- `geometry`: 车辆几何参数指针（NULL则使用默认值）
+
+**返回：**
+- 0: 成功
+- -1: 失败
+
+### calculate_inverse_kinematics
+
+```c
+void calculate_inverse_kinematics(IMecanumKinematics_t* self,
+                             const VehicleVelocity_t* vehicle_vel,
+                             WheelSpeeds_t* wheel_speeds);
+```
+
+**功能：** 将车体速度转换为轮速
+
+### calculate_forward_kinematics
+
+```c
+void calculate_forward_kinematics(IMecanumKinematics_t* self,
+                              const WheelSpeeds_t* wheel_speeds,
+                              VehicleVelocity_t* vehicle_vel);
+```
+
+**功能：** 将轮速转换为车体速度
+
+### MecanumKinematics_SetGeometry
+
+```c
+void MecanumKinematics_SetGeometry(IMecanumKinematics_t* self,
+                                const VehicleGeometry_t* geometry);
+```
+
+**功能：** 动态修改车辆几何参数
 
 ## 注意事项
 
-1. **坐标系定义**:
-   - X轴: 车体前进方向
-   - Y轴: 车体左侧方向
-   - Z轴: 向上（右手坐标系）
+1. **单位一致性**：
+   - 线速度：m/s
+   - 角速度：rad/s
+   - 几何参数：m
 
-2. **速度限制**:
-   - 默认最大线速度: 1.0 m/s
-   - 默认最大角速度: 3.14 rad/s
-   - 默认最大轮速: 20.0 rad/s
+2. **速度范围**：
+   - 本库不包含速度限幅功能
+   - 用户需要根据实际电机性能自行限幅
 
-3. **PWM占空比**:
-   - 范围: -100.0 ~ 100.0
-   - 正值: 正转
-   - 负值: 反转
+3. **控制周期**：
+   - 建议10ms-20ms周期调用逆运动学计算
+   - 控制周期越短，控制精度越高
 
-4. **控制周期**:
-   - 建议10ms-20ms周期调用 `update()` 函数
+4. **轮子安装**：
+   - 确保麦轮安装方向正确
+   - 错误的安装方向会导致运动异常
+
+5. **PID控制**：
+   - 本库只提供运动学解算
+   - 如需闭环控制，用户需自行实现PID
+   - 可以根据编码器反馈实现速度闭环
+
+## 默认参数
+
+如果初始化时传入NULL，将使用以下默认几何参数：
+
+```c
+#define DEFAULT_WHEEL_BASE 0.20f    // 200mm
+#define DEFAULT_TRACK_WIDTH 0.20f    // 200mm
+#define DEFAULT_WHEEL_RADIUS 0.05f   // 50mm
+```

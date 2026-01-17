@@ -77,41 +77,6 @@ int OmniMotorDriver_Init(IOmniMotorDriver_t* driver,
                       SetMotorPWM_fn set_pwm, 
                       EnableMotor_fn enable,
                       SpeedToPWM_fn speed_convert);
-
-/**
- * @brief 设置电机PWM占空比
- * @param driver 电机驱动接口指针
- * @param motor_index 电机编号
- * @param duty_cycle PWM占空比 (-100.0 ~ 100.0)
- */
-void OmniMotorDriver_SetPWM(IOmniMotorDriver_t* driver, 
-                          MotorIndex_e motor_index, 
-                          float duty_cycle);
-
-/**
- * @brief 使能/失能电机
- * @param driver 电机驱动接口指针
- * @param motor_index 电机编号
- * @param enable 使能标志
- */
-void OmniMotorDriver_Enable(IOmniMotorDriver_t* driver,
-                         MotorIndex_e motor_index,
-                         bool enable);
-
-/**
- * @brief 使能所有电机
- * @param driver 电机驱动接口指针
- * @param enable 使能标志
- */
-void OmniMotorDriver_EnableAll(IOmniMotorDriver_t* driver, bool enable);
-
-/**
- * @brief 将轮速转换为PWM占空比
- * @param driver 电机驱动接口指针
- * @param speed_rad_s 轮速 (rad/s)
- * @return PWM占空比 (-100.0 ~ 100.0)
- */
-float OmniMotorDriver_SpeedToPWM(IOmniMotorDriver_t* driver, float speed_rad_s);
 //******************************** 函数声明 ***********************************//
 
 #ifdef __cplusplus
