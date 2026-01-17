@@ -13,6 +13,7 @@
 
 #ifndef OMNI_MOTOR_DRIVER_INTERFACE_H
 #define OMNI_MOTOR_DRIVER_INTERFACE_H
+#include "mecanum_kinematics.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,9 +80,19 @@ typedef struct IOmniMotorDriver {
  * @return 0=成功, -1=失败
  */
 int OmniMotorDriver_Init(IOmniMotorDriver_t* driver, 
-                      SetMotorPWM_fn set_pwm, 
-                      EnableMotor_fn enable,
-                      SpeedToPWM_fn speed_convert);
+                         SetMotorPWM_fn set_pwm,
+                         EnableMotor_fn enable,
+                         SpeedToPWM_fn speed_convert);
+// TODO :用电机驱动的接口完成全向速度到车轮转速到pwm的转换
+/**
+ * @brief 控制电机驱动
+ * @param driver 电机驱动接口指针
+ * @param kinematics 运动学接口指针
+ * @param vehicle_vel 车体速度结构指针
+ */
+void OmniMotorDriver_Control(IOmniMotorDriver_t* driver,
+                             IMecanumKinematics_t* kinematics,
+                             const VehicleVelocity_t* vehicle_vel);
 //******************************** 函数声明 ***********************************//
 
 #ifdef __cplusplus
