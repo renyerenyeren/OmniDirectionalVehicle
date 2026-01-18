@@ -22,31 +22,41 @@
 //******************************** Private Data Structures *********************************//
 
 /**
+ * @brief PID参数基类（所有PID的公共参数）
+ * @note 此结构体应作为三种PID结构体的第一个成员，方便通过private_data强转访问
+ */
+typedef struct {
+    float kp;  /**< 比例系数 */
+    float ki;  /**< 积分系数 */
+    float kd;  /**< 微分系数 */
+} PIDParams_t;
+
+/**
  * @brief 标准PID私有数据
  */
 typedef struct {
-    float integral;    /**< 积分项 */
-    float prev_error;  /**< 上一次误差 */
-    float kp, ki, kd;  /**< PID参数 */
+    PIDParams_t params;  /**< 【首位】PID参数基类 */
+    float integral;      /**< 积分项 */
+    float prev_error;    /**< 上一次误差 */
 } StandardPID_t;
 
 /**
  * @brief 积分分离PID私有数据
  */
 typedef struct {
-    float integral;          /**< 积分项 */
-    float prev_error;       /**< 上一次误差 */
-    float kp, ki, kd;     /**< PID参数 */
-    float separation_threshold; /**< 积分分离阈值 */
+    PIDParams_t params;            /**< 【首位】PID参数基类 */
+    float integral;                /**< 积分项 */
+    float prev_error;             /**< 上一次误差 */
+    float separation_threshold;    /**< 积分分离阈值 */
 } IntegralSeparationPID_t;
 
 /**
  * @brief 增量式PID私有数据
  */
 typedef struct {
+    PIDParams_t params;  /**< 【首位】PID参数基类 */
     float prev_error_1;  /**< 上一次误差 */
     float prev_error_2;  /**< 上上一次误差 */
-    float kp, ki, kd;   /**< PID参数 */
 } IncrementalPID_t;
 
 //******************************** Private Data Structures *********************************//
@@ -173,9 +183,9 @@ int PID_Inst(IPIDController_t* pid,
                 
                 priv->integral = 0.0f;
                 priv->prev_error = 0.0f;
-                priv->kp = kp;
-                priv->ki = ki;
-                priv->kd = kd;
+                priv->params.kp = kp;
+                priv->params.ki = ki;
+                priv->params.kd = kd;
                 
                 pid->private_data = priv;
                 pid->methods = &standard_pid_methods;  /* 绑定方法表 */
@@ -192,9 +202,9 @@ int PID_Inst(IPIDController_t* pid,
                 
                 priv->integral = 0.0f;
                 priv->prev_error = 0.0f;
-                priv->kp = kp;
-                priv->ki = ki;
-                priv->kd = kd;
+                priv->params.kp = kp;
+                priv->params.ki = ki;
+                priv->params.kd = kd;
                 priv->separation_threshold = 5.0f;  /* 默认阈值 */
                 
                 pid->private_data = priv;
@@ -212,9 +222,9 @@ int PID_Inst(IPIDController_t* pid,
                 
                 priv->prev_error_1 = 0.0f;
                 priv->prev_error_2 = 0.0f;
-                priv->kp = kp;
-                priv->ki = ki;
-                priv->kd = kd;
+                priv->params.kp = kp;
+                priv->params.ki = ki;
+                priv->params.kd = kd;
                 
                 pid->private_data = priv;
                 pid->methods = &incremental_pid_methods;  /* 绑定方法表 */
@@ -231,8 +241,31 @@ int PID_Inst(IPIDController_t* pid,
     return 0;
 }
 
+/**
+ * @brief 设置PID参数（对外暴露的接口）
+ * @param pid PID控制器对象指针
+ * @param kp PID比例系数
+ * @param ki PID积分系数
+ * @param kd PID微分系数
+ * @note 此函数通过private_data直接访问PIDParams_t，适用于所有PID类型
+ *       因为所有PID结构体的第一个成员都是PIDParams_t
+ */
+void PID_SetParams(IPIDController_t* pid, float kp, float ki, float kd)
+{
+    if (pid == NULL || pid->private_data == NULL)
+    {
+        return;
+    }
+    
+    /* 直接强转private_data为PIDParams_t*（因为它是所有PID结构体的第一个成员）*/
+    PIDParams_t* params = (PIDParams_t*)pid->private_data;
+    params->kp = kp;
+    params->ki = ki;
+    params->kd = kd;
+}
+
 //******************************** Functions ********************************//
-//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------
 //******************************* 标准PID实例 *********************************//
 
 /**
@@ -250,7 +283,7 @@ static float StandardPID_Calculate(void* self, float target, float current)
     pid->integral += error;
     float derivative = error - pid->prev_error;
     
-    float output = pid->kp * error + pid->ki * pid->integral + pid->kd * derivative;
+    float output = pid->params.kp * error + pid->params.ki * pid->integral + pid->params.kd * derivative;
     
     pid->prev_error = error;
     
@@ -267,9 +300,9 @@ static float StandardPID_Calculate(void* self, float target, float current)
 static void StandardPID_SetParams(void* self, float kp, float ki, float kd)
 {
     StandardPID_t* pid = (StandardPID_t*)self;
-    pid->kp = kp;
-    pid->ki = ki;
-    pid->kd = kd;
+    pid->params.kp = kp;
+    pid->params.ki = ki;
+    pid->params.kd = kd;
 }
 
 /**
@@ -312,7 +345,7 @@ static float IntegralSeparationPID_Calculate(void* self, float target, float cur
     
     float derivative = error - pid->prev_error;
     
-    float output = pid->kp * error + pid->ki * pid->integral + pid->kd * derivative;
+    float output = pid->params.kp * error + pid->params.ki * pid->integral + pid->params.kd * derivative;
     
     pid->prev_error = error;
     
@@ -329,9 +362,9 @@ static float IntegralSeparationPID_Calculate(void* self, float target, float cur
 static void IntegralSeparationPID_SetParams(void* self, float kp, float ki, float kd)
 {
     IntegralSeparationPID_t* pid = (IntegralSeparationPID_t*)self;
-    pid->kp = kp;
-    pid->ki = ki;
-    pid->kd = kd;
+    pid->params.kp = kp;
+    pid->params.ki = ki;
+    pid->params.kd = kd;
 }
 
 /**
@@ -362,9 +395,9 @@ static float IncrementalPID_Calculate(void* self, float target, float current)
     
     float error = target - current;
     
-    float delta_u = pid->kp * (error - pid->prev_error_1) + 
-                   pid->ki * error + 
-                   pid->kd * (error - 2 * pid->prev_error_1 + pid->prev_error_2);
+    float delta_u = pid->params.kp * (error - pid->prev_error_1) + 
+                   pid->params.ki * error + 
+                   pid->params.kd * (error - 2 * pid->prev_error_1 + pid->prev_error_2);
     
     pid->prev_error_2 = pid->prev_error_1;
     pid->prev_error_1 = error;
@@ -382,9 +415,9 @@ static float IncrementalPID_Calculate(void* self, float target, float current)
 static void IncrementalPID_SetParams(void* self, float kp, float ki, float kd)
 {
     IncrementalPID_t* pid = (IncrementalPID_t*)self;
-    pid->kp = kp;
-    pid->ki = ki;
-    pid->kd = kd;
+    pid->params.kp = kp;
+    pid->params.ki = ki;
+    pid->params.kd = kd;
 }
 
 /**

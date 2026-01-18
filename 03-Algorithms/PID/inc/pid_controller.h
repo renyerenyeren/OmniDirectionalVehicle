@@ -102,6 +102,16 @@ int PID_Inst(IPIDController_t* pid,
            int pid_type,
            float kp, float ki, float kd);
 
+/**
+ * @brief 设置PID参数
+ * @param pid PID控制器对象指针
+ * @param kp PID比例系数
+ * @param ki PID积分系数
+ * @param kd PID微分系数
+ * @note 此函数通过private_data直接访问PIDParams_t，适用于所有PID类型
+ */
+void PID_SetParams(IPIDController_t* pid, float kp, float ki, float kd);
+
 //******************************** Functions ********************************//
 
 #ifdef __cplusplus

@@ -13,7 +13,7 @@
 
 #ifndef OMNI_MOTOR_DRIVER_INTERFACE_H
 #define OMNI_MOTOR_DRIVER_INTERFACE_H
-#include "mecanum_kinematics.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,6 +21,7 @@ extern "C" {
 
 //******************************** Includes *********************************//
 #include "omni_types.h"
+#include "mecanum_kinematics.h"
 //******************************** Includes *********************************//
 //---------------------------------------------------------------------------//
 //******************************** Typedefs *********************************//
@@ -92,6 +93,7 @@ int OmniMotorDriver_Init(IOmniMotorDriver_t* driver,
  */
 void OmniMotorDriver_Control(IOmniMotorDriver_t* driver,
                              IMecanumKinematics_t* kinematics,
+                             const void* pid_handler[MOTOR_COUNT],
                              const VehicleVelocity_t* vehicle_vel);
 //******************************** 函数声明 ***********************************//
 
