@@ -26,10 +26,6 @@ extern "C" {
 #define DEFAULT_WHEEL_BASE      0.20f   /**< 默认轴距 200mm */
 #define DEFAULT_TRACK_WIDTH     0.20f   /**< 默认轮距 200mm */
 #define DEFAULT_WHEEL_RADIUS    0.05f   /**< 默认轮半径 50mm */
-
-#define MAX_LINEAR_VELOCITY     1.0f    /**< 最大线速度 (m/s) */
-#define MAX_ANGULAR_VELOCITY    3.14f   /**< 最大角速度 (rad/s) */
-#define MAX_WHEEL_SPEED         20.0f   /**< 最大轮速 (rad/s) */
 //******************************** Defines **********************************//
 //---------------------------------------------------------------------------//
 //******************************** Typedefs *********************************//
