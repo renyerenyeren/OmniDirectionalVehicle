@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
- * @file           : omni_types.h
- * @brief          : 全向车系统通用类型定义
+ * @file           : omni_solve_types.h
+ * @brief          : 全向解算系统通用类型定义
  * @author         : Renyerenyeren
  * @date           : 2026-01-17
  ******************************************************************************
@@ -10,8 +10,8 @@
  ******************************************************************************
  */
 
-#ifndef OMNI_TYPES_H
-#define OMNI_TYPES_H
+#ifndef OMNI_SOLVE_TYPES_H
+#define OMNI_SOLVE_TYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,4 +80,4 @@ typedef struct {
 }
 #endif
 
-#endif /* OMNI_TYPES_H */
+#endif /* OMNI_SOLVE_TYPES_H */

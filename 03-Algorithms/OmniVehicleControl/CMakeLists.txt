@@ -16,6 +16,7 @@ target_include_directories(vehicle_control_lib PUBLIC
 # 链接依赖库（根据实际需求添加，例如硬件驱动库）
 target_link_libraries(vehicle_control_lib PRIVATE
         STM32_Drivers
-        odv_lib
+        omni_solve_lib
+        motor_driver_lib
         velocity_pid_lib
 )

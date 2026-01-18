@@ -15,5 +15,5 @@ target_include_directories(velocity_pid_lib PUBLIC
 
 # 链接依赖库（根据实际需求添加，例如硬件驱动库）
 target_link_libraries(velocity_pid_lib PRIVATE
-        STM32_Drivers
+
 )

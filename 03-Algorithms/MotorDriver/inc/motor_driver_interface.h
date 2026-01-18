@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file           : omni_motor_driver_interface.h
+ * @file           : motor_driver_interface.h
  * @brief          : 电机驱动接口定义
  * @author         : Renyerenyeren
  * @date           : 2026-01-17
@@ -11,16 +11,15 @@
  ******************************************************************************
  */
 
-#ifndef OMNI_MOTOR_DRIVER_INTERFACE_H
-#define OMNI_MOTOR_DRIVER_INTERFACE_H
-
+#ifndef MOTOR_DRIVER_INTERFACE_H
+#define MOTOR_DRIVER_INTERFACE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 //******************************** Includes *********************************//
-#include "omni_types.h"
+#include "omni_solve_types.h"
 #include "mecanum_kinematics.h"
 //******************************** Includes *********************************//
 //---------------------------------------------------------------------------//
@@ -89,6 +88,7 @@ int OmniMotorDriver_Init(IOmniMotorDriver_t* driver,
  * @brief 控制电机驱动
  * @param driver 电机驱动接口指针
  * @param kinematics 运动学接口指针
+ * @param pid_handler PID控制器数组指针，包含4个电机的PID控制器
  * @param vehicle_vel 车体速度结构指针
  */
 void OmniMotorDriver_Control(IOmniMotorDriver_t* driver,
@@ -101,4 +101,4 @@ void OmniMotorDriver_Control(IOmniMotorDriver_t* driver,
 }
 #endif
 
-#endif /* OMNI_MOTOR_DRIVER_INTERFACE_H */
+#endif /* MOTOR_DRIVER_INTERFACE_H */

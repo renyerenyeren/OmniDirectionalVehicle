@@ -16,6 +16,10 @@
 #include "omni_vehicle_control.h"
 #include <stdlib.h>
 #include <string.h>
+#include "omni_solve_types.h"
+#include "motor_driver_interface.h"
+#include "mecanum_kinematics.h"
+#include "pid_controller.h"
 //******************************** Includes *********************************//
 //---------------------------------------------------------------------------//
 //****************************** Global Variables ****************************//

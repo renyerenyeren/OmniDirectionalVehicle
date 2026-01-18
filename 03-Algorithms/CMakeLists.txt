@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 
-# 引入 ODV 子模块
-add_subdirectory(OmniDirectionalVehicle)
+# 引入 OmniSolve 子模块（全向解算）
+add_subdirectory(OmniSolve)
+# 引入 MotorDriver 子模块（硬件抽象）
+add_subdirectory(MotorDriver)
 # 引入 Velocity_PID 子模块
 add_subdirectory(Velocity_PID)
 # 引入 OmniVehicleControl 子模块
@@ -15,7 +17,8 @@ add_library(algorithms INTERFACE)
 
 # 任何链接了 "algorithms" 的目标，都会自动链接
 target_link_libraries(algorithms INTERFACE
-        odv_lib
+        omni_solve_lib
+        motor_driver_lib
         velocity_pid_lib
         vehicle_control_lib
 

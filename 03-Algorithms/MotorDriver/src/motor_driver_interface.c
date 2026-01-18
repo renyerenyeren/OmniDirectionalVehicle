@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file           : omni_motor_driver_interface.c
+ * @file           : motor_driver_interface.c
  * @brief          : 电机驱动接口实现
  * @author         : Renyerenyeren
  * @date           : 2026-01-17
@@ -12,7 +12,8 @@
  */
 
 //******************************** Includes *********************************//
-#include "omni_motor_driver_interface.h"
+#include "motor_driver_interface.h"
+#include "mecanum_kinematics.h"
 #include <stddef.h>
 //******************************** Includes *********************************//
 //---------------------------------------------------------------------------//

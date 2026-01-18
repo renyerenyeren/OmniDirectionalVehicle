@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 //******************************** Includes *********************************//
-#include "omni_types.h"
-#include "omni_motor_driver_interface.h"
+#include "omni_solve_types.h"
+#include "motor_driver_interface.h"
 #include "mecanum_kinematics.h"
 #include "pid_controller.h"
 //******************************** Includes *********************************//
