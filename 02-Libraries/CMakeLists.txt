@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 
-# 引入 Common-DWT 子模块
-add_subdirectory(02_1-Common/DWT_delay)
-
 # 引入 ThirdParty-elog 子模块
 add_subdirectory(02_2-ThirdParty/elog)
 # 引入 ThirdParty-SEGGER 子模块
@@ -18,7 +15,7 @@ add_library(libraries INTERFACE)
 # 任何链接了 "libraries" 的目标，都会自动链接
 target_link_libraries(libraries INTERFACE
         ##Common
-        DWT_delay
+
         ##ThirdParty
         elog
         SEGGER
