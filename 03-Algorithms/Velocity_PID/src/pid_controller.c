@@ -29,6 +29,7 @@ typedef struct {
     float kp;  /**< 比例系数 */
     float ki;  /**< 积分系数 */
     float kd;  /**< 微分系数 */
+    uint8_t index;
 } PIDParams_t;
 
 /**
@@ -127,7 +128,7 @@ static float PID_SpeedToPWM(void* self, float target_speed_rad_s)
     }
     
     /* 1. 读取编码器获取实际速度 */
-    float current_speed = pid_ctrl->read_encoder();
+    float current_speed = pid_ctrl->read_encoder(((PIDParams_t *)pid_ctrl->private_data)->index);
     
     /* 2. 调用内部PID计算方法 */
     float pwm = pid_ctrl->methods->calculate(pid_ctrl->private_data, target_speed_rad_s, current_speed);
