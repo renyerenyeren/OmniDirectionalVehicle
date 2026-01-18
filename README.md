@@ -195,8 +195,7 @@ void my_enable_motor(MotorIndex_e motor, bool enable) {
 
 // 初始化
 int ret = OmniVehicleControl_Inst(my_set_pwm, my_enable_motor, read_encoder, &geometry, pid_params);
-
----
+```
 
 ### 速度控制
 
