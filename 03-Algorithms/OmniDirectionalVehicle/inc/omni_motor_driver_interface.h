@@ -84,7 +84,7 @@ int OmniMotorDriver_Init(IOmniMotorDriver_t* driver,
                          SetMotorPWM_fn set_pwm,
                          EnableMotor_fn enable,
                          SpeedToPWM_fn speed_convert);
-// TODO :用电机驱动的接口完成全向速度到车轮转速到pwm的转换
+
 /**
  * @brief 控制电机驱动
  * @param driver 电机驱动接口指针
