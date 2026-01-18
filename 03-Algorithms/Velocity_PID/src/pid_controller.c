@@ -169,7 +169,8 @@ int PID_Inst(IPIDController_t* pid,
     
     /* 1. 注入外部依赖 */
     pid->read_encoder = read_encoder;
-    
+
+    //TODO:这里的动态分配内存应该补充申请失败的错误处理
     /* 2. 根据类型分配并初始化私有数据 */
     switch (pid_type)
     {
