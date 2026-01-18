@@ -35,7 +35,7 @@ extern "C" {
  * @brief 实例化全向车控制模块（inst）
  * @param set_pwm PWM设置函数指针
  * @param enable_motor 电机使能函数指针
- * @param read_encoders 编码器读取函数数组（4个电机）
+ * @param read_encoder 编码器读取函数（接收电机编号参数）
  * @param geometry 车辆几何参数指针
  * @param pid_params PID参数数组[MOTOR_COUNT][3]，每个元素为{kp, ki, kd}
  * @return 0=成功, -1=失败
@@ -48,7 +48,7 @@ extern "C" {
 int OmniVehicleControl_Inst(
     SetMotorPWM_fn set_pwm,
     EnableMotor_fn enable_motor,
-    ReadEncoder_fn read_encoders[MOTOR_COUNT],
+    ReadEncoder_fn read_encoder,
     const VehicleGeometry_t* geometry,
     const float pid_params[MOTOR_COUNT][3]);
 

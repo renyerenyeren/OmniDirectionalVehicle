@@ -38,7 +38,7 @@ static WheelSpeeds_t g_wheel_speeds;
  * @brief 实例化全向车控制模块（inst）
  * @param set_pwm PWM设置函数指针
  * @param enable_motor 电机使能函数指针
- * @param read_encoders 编码器读取函数数组（4个电机）
+ * @param read_encoder 编码器读取函数（接收电机编号参数）
  * @param geometry 车辆几何参数指针
  * @param pid_params PID参数数组[MOTOR_COUNT][3]，每个元素为{kp, ki, kd}
  * @return 0=成功, -1=失败
@@ -50,23 +50,15 @@ static WheelSpeeds_t g_wheel_speeds;
  */
 int OmniVehicleControl_Inst(SetMotorPWM_fn set_pwm,
                             EnableMotor_fn enable_motor,
-                            ReadEncoder_fn read_encoders[MOTOR_COUNT],
+                            ReadEncoder_fn read_encoder,
                             const VehicleGeometry_t* geometry,
                             const float pid_params[MOTOR_COUNT][3])
 {
     /* 参数检查 */
     if (set_pwm == NULL || enable_motor == NULL ||
-        geometry == NULL || pid_params == NULL)
+        read_encoder == NULL || geometry == NULL || pid_params == NULL)
     {
         return -1;
-    }
-    
-    for (int i = 0; i < MOTOR_COUNT; i++)
-    {
-        if (read_encoders[i] == NULL)
-        {
-            return -1;
-        }
     }
     
     /* 清零全局变量 */
@@ -94,11 +86,12 @@ int OmniVehicleControl_Inst(SetMotorPWM_fn set_pwm,
     for (int i = 0; i < MOTOR_COUNT; i++)
     {
         if (PID_Inst(&g_pid_controllers[i], 
-                     read_encoders[i],  // 注入编码器函数
+                     read_encoder,  // 注入编码器函数（所有PID共享）
                      0,  // PID类型：0=标准PID
                      pid_params[i][0],  // kp
                      pid_params[i][1],  // ki
-                     pid_params[i][2]) != 0)  // kd
+                     pid_params[i][2],  // kd
+                     (uint8_t)i) != 0)  // 电机编号索引
         {
             return -1;
         }

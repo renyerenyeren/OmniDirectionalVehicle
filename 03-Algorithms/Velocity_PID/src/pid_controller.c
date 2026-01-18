@@ -20,7 +20,6 @@
 //******************************** Includes *********************************//
 //---------------------------------------------------------------------------//
 //******************************** Private Data Structures *********************************//
-
 /**
  * @brief PID参数基类（所有PID的公共参数）
  * @note 此结构体应作为三种PID结构体的第一个成员，方便通过private_data强转访问
@@ -156,12 +155,14 @@ static float PID_SpeedToPWM(void* self, float target_speed_rad_s)
  * @param kp PID比例系数
  * @param ki PID积分系数
  * @param kd PID微分系数
+ * @param index 电机编号索引（用于调用read_encoder时区分不同电机）
  * @return 0=成功, -1=失败
  */
 int PID_Inst(IPIDController_t* pid,
            ReadEncoder_fn read_encoder,
            int pid_type,
-           float kp, float ki, float kd)
+           float kp, float ki, float kd,
+           uint8_t index)
 {
     if (pid == NULL || read_encoder == NULL)
     {
@@ -188,6 +189,7 @@ int PID_Inst(IPIDController_t* pid,
                 priv->params.kp = kp;
                 priv->params.ki = ki;
                 priv->params.kd = kd;
+                priv->params.index = index;
                 
                 pid->private_data = priv;
                 pid->methods = &standard_pid_methods;  /* 绑定方法表 */
@@ -207,6 +209,7 @@ int PID_Inst(IPIDController_t* pid,
                 priv->params.kp = kp;
                 priv->params.ki = ki;
                 priv->params.kd = kd;
+                priv->params.index = index;
                 priv->separation_threshold = 5.0f;  /* 默认阈值 */
                 
                 pid->private_data = priv;
@@ -227,6 +230,7 @@ int PID_Inst(IPIDController_t* pid,
                 priv->params.kp = kp;
                 priv->params.ki = ki;
                 priv->params.kd = kd;
+                priv->params.index = index;
                 
                 pid->private_data = priv;
                 pid->methods = &incremental_pid_methods;  /* 绑定方法表 */

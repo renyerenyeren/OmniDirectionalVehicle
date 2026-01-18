@@ -26,6 +26,7 @@ extern "C" {
 //******************************** Includes *********************************//
 //---------------------------------------------------------------------------//
 //******************************** Typedefs *********************************//
+
 /**
  * @brief 编码器读取函数指针类型
  * @return 实际轮速
@@ -89,6 +90,7 @@ typedef struct IPIDController {
  * @param kp PID比例系数
  * @param ki PID积分系数
  * @param kd PID微分系数
+ * @param index 电机编号索引（用于调用read_encoder时区分不同电机）
  * @return 0=成功, -1=失败
  * 
  * @note 此函数完成以下工作：
@@ -100,7 +102,8 @@ typedef struct IPIDController {
 int PID_Inst(IPIDController_t* pid,
            ReadEncoder_fn read_encoder,
            int pid_type,
-           float kp, float ki, float kd);
+           float kp, float ki, float kd,
+           uint8_t index);
 
 /**
  * @brief 设置PID参数
