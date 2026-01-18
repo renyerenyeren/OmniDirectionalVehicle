@@ -22,7 +22,6 @@ extern "C" {
 //******************************** Includes *********************************//
 #include "omni_solve_types.h"
 #include "motor_driver_interface.h"
-#include "mecanum_kinematics.h"
 #include "pid_controller.h"
 //******************************** Includes *********************************//
 //---------------------------------------------------------------------------//
